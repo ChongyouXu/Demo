@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <!-- 
+        参考资料：https://blog.csdn.net/qq_40376439/article/details/104260652 
+    -->
+ 
+    <title>test</title>
+    <style>
+        html,
+        body,
+        #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.24/esri/css/main.css" />
+    <script src="https://js.arcgis.com/4.24/init.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script>
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/layers/MapImageLayer",
+            "esri/identity/IdentityManager",
+            "dojo/domReady!"
+        ], function (
+            Map,
+            MapView,
+            MapImageLayer,
+            IdentityManager
+        ) {
+            let ip = 'http://192.168.1.127:6080/'
+            // ip= 'https://192.168.1.127:6443/'
+            var map = new Map({
+                basemap: "osm"
+            });
+            var view = new MapView({
+                container: "viewDiv",
+                map: map,
+                zoom: 10,
+                center: [120.7, 31]
+            });
+
+
+            //生成token start
+            // 此处考虑放到后端实现
+            var username = "test";
+            var password = "test1";
+            var tokenvalue = $.ajax({
+                type: "POST",
+                url: ip + "arcgis/tokens/generateToken",
+                data: {
+                    username: username,
+                    password: password,
+                    client: "requestip",
+                    expiration: '60',
+                    f: "json"
+                },
+                dataType: "json"
+            });
+            if (tokenvalue) {
+                console.log(tokenvalue)
+                tokenvalue
+                    .success(function (response) {
+                        if (response.token) {
+                            console.log('当前Token:', response.token)
+                            //成功生成token
+                            IdentityManager.registerToken({
+                                server: ip + "arcgis/rest/services",
+                                token: response.token
+                            });
+                            var layerUrl = ip + "arcgis/rest/services/wjwf/patch_2000/MapServer";
+                            var layer = new MapImageLayer({
+                                url: layerUrl
+                            });
+                            map.add(layer);
+                        }
+                    }).error(function (err) {
+                        console.log("操作失败 err:" + err);
+                    });
+            }
+        });
+    </script>
+</head>
+
+<body>
+    <div id="viewDiv"></div>
+</body>
+
+</html>
